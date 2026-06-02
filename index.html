@@ -136,7 +136,7 @@
       </div>
     </div>
   </div>
-  <canvas id="gameCanvas" width="780" height="624"></canvas>
+  <canvas id="gameCanvas" width="780" height="624" tabindex="0"></canvas>
   <div class="game-footer">
     <div class="controls">
       <span><span class="key">↑ ↓ ← →</span> 移动</span>
@@ -901,17 +901,17 @@ function update() {
   if (player && player.alive) {
     let dx = 0, dy = 0, newDir = player.dir;
 
-    if (keys['ArrowUp'] || keys['w'] || keys['W']) { dy = -player.speed; newDir = 0; }
-    else if (keys['ArrowDown'] || keys['s'] || keys['S']) { dy = player.speed; newDir = 2; }
-    else if (keys['ArrowLeft'] || keys['a'] || keys['A']) { dx = -player.speed; newDir = 3; }
-    else if (keys['ArrowRight'] || keys['d'] || keys['D']) { dx = player.speed; newDir = 1; }
+    if (keys['ArrowUp'] || keys['KeyW']) { dy = -player.speed; newDir = 0; }
+    else if (keys['ArrowDown'] || keys['KeyS']) { dy = player.speed; newDir = 2; }
+    else if (keys['ArrowLeft'] || keys['KeyA']) { dx = -player.speed; newDir = 3; }
+    else if (keys['ArrowRight'] || keys['KeyD']) { dx = player.speed; newDir = 1; }
 
     if (dx !== 0 || dy !== 0) {
       player.move(dx, dy, newDir);
     }
 
     // Shooting
-    if (keys[' '] || keys['Space']) {
+    if (keys['Space']) {
       const now = Date.now();
       if (now - lastShotTime > SHOT_COOLDOWN) {
         const bullet = player.shoot();
@@ -1131,29 +1131,53 @@ function draw() {
 }
 
 // ==================== INPUT HANDLING ====================
-document.addEventListener('keydown', (e) => {
-  keys[e.key] = true;
+// Focus canvas on load and on click to ensure it receives keyboard events
+window.addEventListener('load', () => {
+  canvas.focus();
+});
+canvas.addEventListener('click', () => {
+  canvas.focus();
+});
+// Prevent IME from capturing keyboard events on the canvas
+canvas.addEventListener('compositionstart', () => {
+  canvas.focus();
+});
+canvas.addEventListener('compositionend', () => {
+  canvas.focus();
+});
 
-  if (e.key === 'p' || e.key === 'P') {
+document.addEventListener('keydown', (e) => {
+  // Use e.code for physical key detection (immune to keyboard layout / IME issues)
+  const code = e.code;
+
+  // Always prevent default for game keys
+  const gameKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyP', 'KeyR'];
+  if (gameKeys.includes(code)) {
+    e.preventDefault();
+  }
+
+  // If IME is composing, ignore game input
+  if (e.isComposing) return;
+
+  keys[code] = true;
+
+  if (code === 'KeyP') {
     if (gameState === 'playing') {
       gameState = 'paused';
     } else if (gameState === 'paused') {
       gameState = 'playing';
     }
+    return;
   }
 
-  if (e.key === 'r' || e.key === 'R') {
+  if (code === 'KeyR') {
     restartGame();
-  }
-
-  // Prevent scrolling with arrow keys
-  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
-    e.preventDefault();
+    return;
   }
 });
 
 document.addEventListener('keyup', (e) => {
-  keys[e.key] = false;
+  keys[e.code] = false;
 });
 
 // ==================== GAME LOOP ====================
@@ -1166,6 +1190,9 @@ function gameLoop() {
 // ==================== START GAME ====================
 initGame(levelMaps[0]);
 gameLoop();
+
+// Auto-focus the canvas so keyboard input works immediately
+canvas.focus();
 </script>
 </body>
 </html>
