@@ -834,8 +834,28 @@ function updateEnemyAI(enemy) {
 }
 
 // ==================== GAME FUNCTIONS ====================
+function clearSpawnArea() {
+  // Clear a 4x4 tile area around the player's spawn point so the player isn't
+  // trapped inside walls at game start. Player spawns at bottom center.
+  const spawnCenterCol = Math.floor(GRID_COLS / 2);
+  const spawnCenterRow = GRID_ROWS - 3;
+  for (let row = spawnCenterRow - 2; row <= spawnCenterRow + 1; row++) {
+    if (row < 0 || row >= GRID_ROWS) continue;
+    const rowArr = currentMap[row].split('');
+    for (let col = spawnCenterCol - 2; col <= spawnCenterCol + 1; col++) {
+      if (col < 0 || col >= GRID_COLS) continue;
+      // Keep the base tile (4) but clear everything else
+      if (rowArr[col] !== '4') {
+        rowArr[col] = '0';
+      }
+    }
+    currentMap[row] = rowArr.join('');
+  }
+}
+
 function initGame(mapData) {
   loadMap(mapData);
+  clearSpawnArea();
   player = new Tank(canvas.width / 2, canvas.height - TILE_SIZE * 3, 0, '#4ade80', true);
   bullets = [];
   enemies = [];
